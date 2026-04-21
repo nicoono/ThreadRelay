@@ -9,5 +9,8 @@ package threadrelay;
  * @author onorati.nicolo
  */
 public class Staffetta {
+
+    public Staffetta() {
+    }
     
 }
