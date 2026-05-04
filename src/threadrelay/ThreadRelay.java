@@ -14,8 +14,8 @@ public class ThreadRelay {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Gestore g = new Gestore();
-        g.avviaGara();
+        CampoDaCorsa c = new CampoDaCorsa();
+        c.setVisible(true);
     }
     
 }
