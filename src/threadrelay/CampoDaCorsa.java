@@ -4,7 +4,7 @@ import java.awt.*;
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import javax.swing.*;
 
-public class CampoDaCorsa extends JFrame {
+public class CampoDaCorsa extends JFrame implements Observer {
 
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(CampoDaCorsa.class.getName());
     private static final int RUNNER_COUNT = 4;
@@ -14,11 +14,11 @@ public class CampoDaCorsa extends JFrame {
     private final AtomicIntegerArray progressModel = new AtomicIntegerArray(RUNNER_COUNT);
     private final JLabel[] valueLabels = new JLabel[RUNNER_COUNT];
     private final Thread[] runnerThreads = new Thread[RUNNER_COUNT];
-    private final Object pauseLock = new Object();
+    final Object pauseLock = new Object();
 
     private volatile boolean running;
-    private volatile boolean paused;
-    private volatile boolean stopRequested;
+    volatile boolean paused;
+    volatile boolean stopRequested;
 
     private RacePanel racePanel;
     private JComboBox<String> velocitaDropdown;
@@ -121,17 +121,22 @@ public class CampoDaCorsa extends JFrame {
 
     private void avviaSimulazione() {
         if (running) {
-            return;
+            return;         // ← evita doppio avvio
         }
-
-        running = true;
+        running = true;              // ← segna che la gara è in corso
         paused = false;
         stopRequested = false;
-        resetRace();
-        aggiornaControlliInCorsa();
+        resetRace();                 // ← resetta la grafica
+        aggiornaControlliInCorsa();  // ← abilita Sospendi e Ferma
 
-        int delay = getDelayBySelection();
-        Thread coordinatore = new Thread(() -> runRace(delay), "relay-coordinator");
+        Thread coordinatore = new Thread(() -> {
+            Gestore gestore = new Gestore(this);
+            gestore.avviaGara();
+            running = false;
+            paused = false;
+            stopRequested = false;
+            aggiornaControlliFineGara();
+        }, "relay-coordinator");
         coordinatore.setDaemon(true);
         coordinatore.start();
     }
@@ -177,7 +182,7 @@ public class CampoDaCorsa extends JFrame {
         });
     }
 
-    private int getDelayBySelection() {
+    public int getDelayBySelection() {
         int index = velocitaDropdown.getSelectedIndex();
         if (index == 0) {
             return 120;
@@ -368,6 +373,16 @@ public class CampoDaCorsa extends JFrame {
         }
 
         java.awt.EventQueue.invokeLater(() -> new CampoDaCorsa().setVisible(true));
+    }
+
+    @Override
+    public void update(int runnerIndex, int valore) {
+        System.out.println("UPDATE ricevuto: runner=" + runnerIndex + " valore=" + valore);
+        if (valore >= 100) {
+            setRunnerFinished(runnerIndex);
+        } else {
+            setRunnerProgress(runnerIndex, valore);
+        }
     }
 
     private final class RacePanel extends JPanel {

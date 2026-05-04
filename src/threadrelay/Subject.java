@@ -8,6 +8,8 @@ package threadrelay;
  *
  * @author User
  */
-public class Subject {
-    
+public interface Subject {
+    public void addObserver(Observer o);
+    public void removeObserver(Observer o);
+    public void notifyObservers();
 }

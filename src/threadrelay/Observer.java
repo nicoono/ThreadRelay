@@ -8,6 +8,6 @@ package threadrelay;
  *
  * @author User
  */
-public class Observer {
-    
+public interface Observer {
+    public void update(int runnerIndex, int valore);
 }
